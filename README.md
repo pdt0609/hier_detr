@@ -56,7 +56,7 @@ COCODIR/
 
 Change "num_classes, "''img_folder'' and ''ann_file'' in both ''train_dataloader'' and ''val_dataloader''
    
-   For MTSD dataset:
+   For MTSD dataset (all MTSD annotation files in annotations folder):
    - Schema 1 (150+71):
 
     num_classes: 221
@@ -112,11 +112,15 @@ Change "num_classes, "''img_folder'' and ''ann_file'' in both ''train_dataloader
       ```
       cd /cod/configs/cl_pipeline.yml
       ```
-      Change the teacher path `teacher_path: "/kaggle/input/checkpoint-for-mtsd-model/ckp_mtsd_cl_task0_schema_2.pth"`
-   
-5. Training:
-   ```
-  python scripts/train.py --config /kaggle/working/hier_detr/continual/cod/configs/rtdetr/rtdetr_r50vd_coco.yml 
-  ```
+      IF training task1, you must have to change the teacher path (Task 0 model's path) `teacher_path: "/kaggle/input/checkpoint-for-mtsd-model/ckp_mtsd_cl_task0_schema_2.pth"`
+
+5. Running:
+
+       python img_max_pixels.py
+
+6. Training:
+```
+  python scripts/train.py --config /kaggle/working/hier_detr/continual/cod/configs/rtdetr/rtdetr_r50vd_coco.yml
+ ```
 
 
