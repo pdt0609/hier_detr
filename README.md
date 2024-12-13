@@ -53,14 +53,49 @@ COCODIR/
    ``` 
 
 3. Change dataset + annotations directory in /cod/configs/dataset/coco_detection.yml
+
+Change "num_classes, "''img_folder'' and ''ann_file'' in both ''train_dataloader'' and ''val_dataloader''
    
-   For MTSD dataset:
-   - Schema 1 (129+92):
-      \annotations\MTSD 129+92\train_output_file_coco.json
-      \annotations\MTSD 129+92\val_output_file_coco.json
-   - Schema 2 (150+71):
-      \annotations\MTSD 150+71\train_output_file_coco.json
-      \annotations\MTSD 150+71\val_output_file_coco.json
+   For MTSD dataset (all MTSD annotation files in annotations folder):
+   - Schema 1 (150+71):
+
+    num_classes: 221
+
+    train_dataloader:
+    /home/kc/cl/MTSD/mtsd_fully_annotated_val_images/images
+     \annotations\MTSD 150+71\train_output_file_coco.json
+    
+    val_dataloader:
+    /home/kc/cl/MTSD/mtsd_fully_annotated_train_images/images
+       \annotations\MTSD 150+71\val_output_file_coco.json
+   
+   
+   
+   - Schema 2 (129+92):
+
+    num_classes: 221
+
+    train_dataloader:
+    img_folder:/home/kc/cl/MTSD/mtsd_fully_annotated_train_images/images
+     ann_file:\annotations\MTSD 129+92\train_output_file_coco.json
+
+    img_folder:/home/kc/cl/MTSD/mtsd_fully_annotated_val_images/images 
+      ann_file:\annotations\MTSD 129+92\val_output_file_coco.json
+   
+
+
+   For COCO dataset:
+
+     num_classes: 80
+     
+    train_dataloader:
+     img_folder:/kaggle/input/coco2017/train2017
+     ann_file:/kaggle/input/coco2017/annotations/instances_train2017.json
+
+    val_dataloader:
+     img_folder:/kaggle/input/coco2017/val2017
+     ann_file:/kaggle/input/coco2017/annotations/instances_val2017.json
+
 
 4. Change setting corresponding to specific task id: 
    ```
@@ -77,11 +112,15 @@ COCODIR/
       ```
       cd /cod/configs/cl_pipeline.yml
       ```
-      Change the teacher path `teacher_path: "/kaggle/input/checkpoint-for-mtsd-model/ckp_mtsd_cl_task0_schema_2.pth"`
-   
-5. Training:
-   ```
-   python scripts/train.py
-   ```
+      IF training task1, you must have to change the teacher path (Task 0 model's path) `teacher_path: "/kaggle/input/checkpoint-for-mtsd-model/ckp_mtsd_cl_task0_schema_2.pth"`
+
+5. Running:
+
+       python img_max_pixels.py
+
+6. Training:
+```
+  python scripts/train.py --config /kaggle/working/hier_detr/continual/cod/configs/rtdetr/rtdetr_r50vd_coco.yml
+ ```
 
 
