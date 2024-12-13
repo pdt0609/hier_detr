@@ -64,8 +64,8 @@ RTDETRPostProcessor:
   num_top_queries: 300
 
 SetCriterion:
-  weight_dict: {loss_vfl: 1, loss_proxy: 0.1, loss_bbox: 5, loss_giou: 2,}
-  losses: ['vfl', 'proxy', 'boxes', ]
+  weight_dict: {loss_vfl: 1, loss_ETF: 0.1, loss_bbox: 5, loss_giou: 2,}
+  losses: ['vfl', 'ETF', 'boxes', ]
   alpha: 0.75
   gamma: 2.0
 

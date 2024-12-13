@@ -201,9 +201,14 @@ class ProxyNCA(torch.nn.Module):
         if level == 3:
             self.proxies = torch.nn.Parameter(layer_3, requires_grad=False)
             print("level", level)
-        if level == 2:
+        elif level == 2:
             self.proxies = torch.nn.Parameter(layer_2, requires_grad=False)
             print("level", level)
+
+        else:
+            self.proxies = Parameter(generate_ETF(sz_embedding, nb_classes))
+            self.proxies.requires_grad = False
+
 
         #self.proxies = Parameter(torch.randn(nb_classes, sz_embedding) / 8)
         
@@ -211,7 +216,7 @@ class ProxyNCA(torch.nn.Module):
         
         #print(self.proxies.shape()) #torch.Size([8, 300, 221])
         # Set requires_grad to False
-        #self.proxies.requires_grad = False
+        
         
         
         self.smoothing_const = smoothing_const
@@ -357,7 +362,7 @@ class SetCriterion(nn.Module):
         
         self.proxy_lv2 = ProxyNCA(4, 256, level = 2).cuda()
 
-        #self.proxy = Proxy_Anchor(80, 256).cuda()
+        self.proxy = ProxyNCA(num_classes, 256, level = 1).cuda()
 
 
     def loss_labels(self, outputs, targets, indices, num_boxes, log=True):
@@ -470,10 +475,12 @@ class SetCriterion(nn.Module):
         #assert 'origin_logits_l6' in outputs
 #         for i, j in enumerate(outputs):
 #             print(j)
+        
+        num_classes = self.num_classes
         src_logits = outputs['origin_logits_l6'].float()
         a = 0
 
-        if src_logits.shape != torch.Size([8, 300, 221]):
+        if src_logits.shape != torch.Size([8, 300, num_classes]):
             idx = self._get_src_permutation_idx(indices)
             target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
             #print("target_classes_o",target_classes_o.shape)
@@ -496,7 +503,7 @@ class SetCriterion(nn.Module):
         
         src_logits_lv2 = outputs['origin_logits_l5'].float()
         
-        if src_logits_lv2.shape != torch.Size([8, 300, 221]):
+        if src_logits_lv2.shape != torch.Size([8, 300, num_classes]):
             idx = self._get_src_permutation_idx(indices)
             target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
             #print("target_classes_o",target_classes_o.shape)
@@ -516,8 +523,39 @@ class SetCriterion(nn.Module):
                 a += self.proxy_lv2(src_logits_lv2[i], target[i]) / max(num_boxes, 1e-6)
         
 
-        loss = a
+        loss = a * 0.01
         return {'loss_proxy': loss}
+
+    def loss_ETF(self, outputs, targets, indices, num_boxes, log=True):
+        #fixing
+        #assert 'origin_logits_l6' in outputs
+#         for i, j in enumerate(outputs):
+#             print(j)
+        src_logits = outputs['origin_logits_l6'].float()
+        a = 0
+
+        num_classes = self.num_classes
+        
+        if src_logits.shape!=torch.Size([8, 300, num_classes]):
+            #print("src_logits.shape",src_logits.shape)
+            idx = self._get_src_permutation_idx(indices)
+            target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+            target_classes = torch.full(src_logits.shape[:2], self.num_classes,
+                                        dtype=torch.int64, device=src_logits.device)
+            target_classes[idx] = target_classes_o
+
+            target = F.one_hot(target_classes, num_classes=self.num_classes+1)[..., :-1].float()
+
+            
+            for i in range(src_logits.shape[0]):
+                a+=self.proxy(src_logits[i],target[i])/ num_boxes
+                
+            #print(src_logits.shape)
+        #else:
+            #print("src_logits.shape",src_logits.shape)
+        loss=a * 0.01
+        #print("loss is:",loss)
+        return {'loss_ETF': loss}
 
     
 
@@ -608,6 +646,7 @@ class SetCriterion(nn.Module):
             'focal': self.loss_labels_focal,
             'vfl': self.loss_labels_vfl,
             'proxy':self.loss_proxy,
+            'ETF': self.loss_ETF,
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
